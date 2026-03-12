@@ -234,6 +234,27 @@ body::before{
 }
 .close-btn:hover{background:var(--border2);color:var(--text);}
 
+/* ── COPY BTN ── */
+.copy-btn{
+  position:absolute;top:9px;right:9px;
+  background:var(--surface3);border:1px solid var(--border2);
+  color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:9px;
+  padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .15s;
+  opacity:0;z-index:2;
+}
+.ex:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--border2);color:var(--accent);}
+.copy-btn.copied{color:var(--accent);border-color:var(--accent);opacity:1;}
+.ex{position:relative;}
+
+/* ── CARD CATEGORY BADGE ── */
+.cat-badge{
+  font-size:9px;color:var(--text-muted);
+  background:var(--surface3);border:1px solid var(--border);
+  padding:2px 6px;border-radius:3px;margin-left:auto;
+  white-space:nowrap;
+}
+
 /* ── NORESULT ── */
 .nores{text-align:center;padding:80px 20px;color:var(--text-muted);}
 .nores .big{font-size:44px;margin-bottom:12px;}
@@ -2115,6 +2136,635 @@ const DB = [
    links:[{l:'man env',u:'https://man7.org/linux/man-pages/man1/env.1.html'}]},
 ]},
 
+// ───────────────────────────────── ARCHIVES & COMPRESSION ──────────
+{id:'arch',icon:'🗜',name:'Архивы и сжатие',
+ desc:'Создание, распаковка и управление архивами различных форматов',
+ cmds:[
+  {name:'zip / unzip',brief:'ZIP-архивы: создание и распаковка',
+   syntax:'zip [опции] архив.zip файлы...  |  unzip [опции] архив.zip',
+   desc:'zip — создаёт ZIP-архивы с поддержкой паролей и сжатия. unzip — распаковывает. ZIP — кроссплатформенный формат, работает везде включая Windows.',
+   opts:[
+     {f:'-r',d:'[zip] Рекурсивно добавить директорию'},
+     {f:'-e',d:'[zip] Зашифровать архив паролем'},
+     {f:'-9',d:'[zip] Максимальное сжатие'},
+     {f:'-l',d:'[unzip] Просмотреть содержимое без распаковки'},
+     {f:'-d DIR',d:'[unzip] Распаковать в указанную директорию'},
+     {f:'-o',d:'[unzip] Перезаписывать файлы без вопросов'},
+   ],
+   exs:[
+     {c:'zip -r backup.zip ./myproject',cm:'# Упаковать папку'},
+     {c:'zip -re secrets.zip ./docs',cm:'# Зашифровать с паролем'},
+     {c:'unzip archive.zip -d /tmp/extracted',cm:'# Распаковать в папку'},
+     {c:'unzip -l archive.zip',cm:'# Просмотреть содержимое'},
+     {c:'unzip -p archive.zip file.txt',cm:'# Вывести файл из архива в stdout'},
+   ],
+   tags:['common'],
+   links:[{l:'man zip',u:'https://linux.die.net/man/1/zip'}]},
+
+  {name:'gzip / gunzip / zcat',brief:'Сжатие файлов в формате .gz',
+   syntax:'gzip [опции] файл  |  gunzip файл.gz  |  zcat файл.gz',
+   desc:'gzip — стандартный компрессор Linux. Заменяет оригинальный файл на .gz. zcat позволяет читать .gz файлы без распаковки — удобно для больших логов.',
+   opts:[
+     {f:'-k',d:'Сохранить оригинальный файл (keep)'},
+     {f:'-d',d:'Декомпрессировать (то же что gunzip)'},
+     {f:'-9',d:'Максимальное сжатие'},
+     {f:'-1',d:'Быстрое сжатие'},
+     {f:'-v',d:'Показать коэффициент сжатия'},
+     {f:'-l',d:'Показать информацию об архиве'},
+   ],
+   exs:[
+     {c:'gzip -k largefile.log',cm:'# Сжать, сохранив оригинал'},
+     {c:'gunzip data.gz',cm:'# Распаковать .gz'},
+     {c:'zcat /var/log/syslog.1.gz | grep ERROR',cm:'# Поиск в сжатом логе без распаковки'},
+     {c:'gzip -9 backup.tar',cm:'# Максимальное сжатие tar-архива'},
+   ],
+   tags:['common'],
+   links:[{l:'man gzip',u:'https://man7.org/linux/man-pages/man1/gzip.1.html'}]},
+
+  {name:'bzip2 / xz',brief:'Сжатие с высокой степенью (bz2, xz)',
+   syntax:'bzip2 [опции] файл  |  xz [опции] файл',
+   desc:'bzip2 и xz дают лучшее сжатие чем gzip, но медленнее. xz — самое сильное сжатие (используется в .tar.xz дистрибутивах). bunzip2/unxz — декомпрессия.',
+   opts:[
+     {f:'-k',d:'Сохранить оригинал'},
+     {f:'-9',d:'Максимальное сжатие'},
+     {f:'-d',d:'Декомпрессировать'},
+     {f:'-v',d:'Подробный вывод с прогрессом'},
+     {f:'-T N',d:'[xz] Использовать N потоков'},
+   ],
+   exs:[
+     {c:'xz -k -9 bigfile.tar',cm:'# Максимальное XZ-сжатие',e:'Медленнее, но значительно меньше размер'},
+     {c:'tar -cJf archive.tar.xz ./dir',cm:'# tar + xz в одну команду'},
+     {c:'tar -cjf archive.tar.bz2 ./dir',cm:'# tar + bzip2'},
+   ],
+   tags:['advanced'],
+   links:[{l:'man xz',u:'https://man7.org/linux/man-pages/man1/xz.1.html'}]},
+]},
+
+// ───────────────────────────────── TEXT TOOLS ──────────
+{id:'text',icon:'📝',name:'Текст и данные',
+ desc:'Продвинутая обработка текста: tr, tee, join, paste, bc, jq',
+ cmds:[
+  {name:'tr',brief:'Транслитерация и удаление символов',
+   syntax:'tr [опции] НАБОР1 [НАБОР2]',
+   desc:'Translate. Читает stdin, заменяет или удаляет символы. Простой и быстрый — отлично работает в пайпах. Не работает с многострочными паттернами — для этого sed.',
+   opts:[
+     {f:'-d',d:'Удалить символы НАБОР1 (без замены)'},
+     {f:'-s',d:'Сжать повторяющиеся символы НАБОР1 в один'},
+     {f:'-c',d:'Дополнение: использовать все символы НЕ из НАБОР1'},
+     {f:'[:lower:]',d:'Все строчные буквы'},
+     {f:'[:upper:]',d:'Все заглавные буквы'},
+     {f:'[:digit:]',d:'Цифры 0-9'},
+     {f:'[:space:]',d:'Пробельные символы'},
+   ],
+   exs:[
+     {c:'echo "Hello World" | tr "[:lower:]" "[:upper:]"',cm:'# → HELLO WORLD'},
+     {c:'echo "hello" | tr "a-z" "A-Z"',cm:'# Аналогично — через диапазон'},
+     {c:'cat file.txt | tr -d "\\r"',cm:'# Удалить Windows-переносы (CRLF → LF)',e:'Незаменимо при работе с файлами от Windows'},
+     {c:'echo "aabbcc" | tr -s "a-z"',cm:'# → abc (сжать дубли)'},
+     {c:'cat file.txt | tr -cd "[:digit:]\\n"',cm:'# Оставить только цифры и переносы строк'},
+   ],
+   tags:['common'],
+   links:[{l:'man tr',u:'https://man7.org/linux/man-pages/man1/tr.1.html'}]},
+
+  {name:'tee',brief:'Читать stdin и одновременно писать в файл и stdout',
+   syntax:'tee [опции] файл...',
+   desc:'Разветвляет поток данных: данные идут и на экран, и в файл. Название от сантехнического Т-образного фитинга. Незаменим когда нужно видеть вывод команды и одновременно сохранять его.',
+   opts:[
+     {f:'-a',d:'Дописывать в файл (не перезаписывать)'},
+     {f:'-i',d:'Игнорировать SIGINT (прерывание)'},
+   ],
+   exs:[
+     {c:'./build.sh | tee build.log',cm:'# Видим вывод и сохраняем лог'},
+     {c:'cat /etc/nginx.conf | tee /tmp/nginx_backup.conf | grep server',cm:'# Копировать и фильтровать одновременно'},
+     {c:'echo "new line" | tee -a /etc/hosts',cm:'# Дописать строку в файл (нужен sudo)',e:'Лучше чем >> при работе через sudo'},
+     {c:'curl -s url | tee response.json | jq .',cm:'# Скачать JSON, сохранить и сразу красиво вывести'},
+   ],
+   tags:['scripting'],
+   links:[{l:'man tee',u:'https://man7.org/linux/man-pages/man1/tee.1.html'}]},
+
+  {name:'jq',brief:'Парсинг, фильтрация и трансформация JSON',
+   syntax:'jq [опции] ФИЛЬТР [файл...]',
+   desc:'Командная строка для работы с JSON — как grep/awk но для JSON. Умеет красиво форматировать, извлекать поля, фильтровать массивы, трансформировать структуры. Незаменим при работе с REST API.',
+   opts:[
+     {f:'.',d:'Вывести JSON красиво (pretty-print)'},
+     {f:'.key',d:'Значение ключа'},
+     {f:'.[0]',d:'Первый элемент массива'},
+     {f:'.[]',d:'Все элементы массива'},
+     {f:'-r',d:'Raw output — без кавычек вокруг строк'},
+     {f:'-c',d:'Compact — минифицированный JSON'},
+     {f:'--arg',d:'Передать переменную в фильтр'},
+   ],
+   exs:[
+     {c:'curl -s https://api.github.com/users/torvalds | jq .',cm:'# Красиво вывести JSON'},
+     {c:'echo \'{"name":"Linus","age":53}\' | jq .name',cm:'# → "Linus"'},
+     {c:'cat users.json | jq ".[].email"',cm:'# Все email из массива'},
+     {c:'cat data.json | jq -r ".items[] | select(.active==true) | .name"',cm:'# Фильтрация: только активные'},
+     {c:'jq -r \'.[] | [.name, .version] | @csv\' packages.json',cm:'# Конвертировать в CSV'},
+   ],
+   tags:['advanced','scripting'],
+   note:'jq обычно нужно устанавливать: apt install jq',
+   links:[{l:'jq manual',u:'https://stedolan.github.io/jq/manual/'}]},
+
+  {name:'bc',brief:'Калькулятор с произвольной точностью и скриптингом',
+   syntax:'bc [опции]  |  echo "выражение" | bc',
+   desc:'Basic Calculator. Поддерживает дробные числа, тригонометрию, условия и циклы. В bash нет нативной работы с float — bc это решает. Флаг -l подключает математическую библиотеку.',
+   opts:[
+     {f:'-l',d:'Загрузить math-библиотеку (sin, cos, sqrt, ln и т.д.)'},
+     {f:'-q',d:'Тихий режим (без приветствия)'},
+     {f:'scale=N',d:'Установить количество знаков после запятой'},
+   ],
+   exs:[
+     {c:'echo "scale=4; 22/7" | bc',cm:'# → 3.1428 (число π приближённо)'},
+     {c:'echo "2^32" | bc',cm:'# → 4294967296'},
+     {c:'echo "scale=2; $(df / | tail -1 | awk \'{print $3}\') / $(df / | tail -1 | awk \'{print $2}\') * 100" | bc',cm:'# % заполненности диска'},
+     {c:'echo "obase=2; 255" | bc',cm:'# 255 в двоичной: 11111111',e:'obase — base вывода, ibase — ввода'},
+   ],
+   tags:['scripting'],
+   links:[{l:'man bc',u:'https://man7.org/linux/man-pages/man1/bc.1p.html'}]},
+
+  {name:'date',brief:'Вывод и форматирование текущего времени и даты',
+   syntax:'date [опции] [+ФОРМАТ]',
+   desc:'Мощный инструмент работы с датами. В скриптах используется для генерации временных меток, названий файлов, логирования. Поддерживает арифметику дат и множество форматов вывода.',
+   opts:[
+     {f:'%Y-%m-%d',d:'ISO-формат: 2024-01-15'},
+     {f:'%H:%M:%S',d:'Время: 14:30:05'},
+     {f:'%s',d:'Unix timestamp (секунды от 1970-01-01)'},
+     {f:'%A',d:'День недели: Monday'},
+     {f:'-d STRING',d:'Разобрать произвольную дату ("yesterday", "3 days ago")'},
+     {f:'-u',d:'Время UTC'},
+   ],
+   exs:[
+     {c:'date +"%Y-%m-%d_%H-%M-%S"',cm:'# → 2024-01-15_14-30-05 (для имён файлов)'},
+     {c:'BACKUP="backup_$(date +%Y%m%d).tar.gz"',cm:'# Имя бэкапа с датой'},
+     {c:'date -d "7 days ago" +%Y-%m-%d',cm:'# Дата 7 дней назад'},
+     {c:'date +%s',cm:'# Unix timestamp сейчас'},
+     {c:'echo $(($(date +%s) - $(date -d "2024-01-01" +%s))) | xargs -I{} echo "Прошло {} секунд с нового года"',cm:'# Секунд с начала года'},
+   ],
+   tags:['scripting','common'],
+   links:[{l:'man date',u:'https://man7.org/linux/man-pages/man1/date.1.html'}]},
+
+  {name:'paste / join',brief:'Объединить файлы по столбцам или общему полю',
+   syntax:'paste файл1 файл2  |  join файл1 файл2',
+   desc:'paste объединяет строки файлов горизонтально через TAB. join — как SQL JOIN: объединяет по совпадающему полю. Оба работают построчно и хорошо вписываются в пайпы.',
+   opts:[
+     {f:'-d ";"',d:'[paste] Разделитель между столбцами (по умолчанию TAB)'},
+     {f:'-s',d:'[paste] Транспонировать — все строки файла в одну'},
+     {f:'-1 N',d:'[join] Ключевое поле в файл 1'},
+     {f:'-2 N',d:'[join] Ключевое поле в файл 2'},
+   ],
+   exs:[
+     {c:'paste names.txt ages.txt',cm:'# Два файла рядом, через TAB'},
+     {c:'paste -d"," col1.txt col2.txt > result.csv',cm:'# Собрать CSV из отдельных столбцов'},
+     {c:'paste -s -d" " words.txt',cm:'# Все строки в одну строку через пробел'},
+     {c:'join -1 1 -2 1 file1.sorted file2.sorted',cm:'# SQL-style JOIN по первому полю'},
+   ],
+   tags:['advanced'],
+   links:[{l:'man paste',u:'https://man7.org/linux/man-pages/man1/paste.1.html'}]},
+
+  {name:'seq',brief:'Генератор числовых последовательностей',
+   syntax:'seq [ПЕРВОЕ [ШАГ]] ПОСЛЕДНЕЕ',
+   desc:'Выводит числовую последовательность. Простой, но очень полезный в скриптах для циклов, генерации тест-данных, нумерации.',
+   opts:[
+     {f:'-w',d:'Дополнять нулями для одинаковой ширины'},
+     {f:'-f "ФОРМАТ"',d:'Формат вывода в стиле printf'},
+     {f:'-s "SEP"',d:'Разделитель (по умолчанию \\n)'},
+   ],
+   exs:[
+     {c:'seq 1 10',cm:'# Числа от 1 до 10'},
+     {c:'seq 0 0.5 2',cm:'# 0 0.5 1.0 1.5 2.0'},
+     {c:'seq -w 1 100',cm:'# 001 002 ... 100 (с нулями)'},
+     {c:'for i in $(seq 1 5); do echo "Step $i"; done',cm:'# Цикл в скрипте'},
+     {c:'seq 1 10 | shuf | head -3',cm:'# Случайные 3 числа из 1-10'},
+   ],
+   tags:['scripting'],
+   links:[{l:'man seq',u:'https://man7.org/linux/man-pages/man1/seq.1.html'}]},
+]},
+
+// ───────────────────────────────── NETWORK ADVANCED ──────────
+{id:'netadv',icon:'🔌',name:'Сеть: расширенное',
+ desc:'Netcat, OpenSSL, firewall, DNS-утилиты и продвинутые сетевые инструменты',
+ cmds:[
+  {name:'nc (netcat)',brief:'Универсальный TCP/UDP-инструмент — "швейцарский нож сети"',
+   syntax:'nc [опции] хост порт  |  nc -l -p порт',
+   desc:'Netcat умеет подключаться к TCP/UDP-сокетам, слушать порты, пересылать файлы, создавать простые чаты и тестировать сетевые сервисы. Идеален для отладки.',
+   opts:[
+     {f:'-l',d:'Режим прослушивания (server mode)'},
+     {f:'-p ПОРТ',d:'Локальный порт'},
+     {f:'-u',d:'UDP вместо TCP'},
+     {f:'-v',d:'Подробный вывод'},
+     {f:'-z',d:'Zero-I/O: только проверить порт (scanning)'},
+     {f:'-w N',d:'Таймаут N секунд'},
+     {f:'-e CMD',d:'Выполнить команду при подключении (ncat)'},
+   ],
+   exs:[
+     {c:'nc -zv google.com 443',cm:'# Проверить что порт 443 открыт'},
+     {c:'nc -zv host.example.com 20-30',cm:'# Сканировать диапазон портов'},
+     {c:'nc -l -p 9999 > received_file.txt',cm:'# Принять файл на порту 9999'},
+     {c:'cat myfile.txt | nc target_host 9999',cm:'# Отправить файл'},
+     {c:'nc localhost 25',cm:'# Протестировать SMTP вручную'},
+   ],
+   tags:['advanced','network'],
+   links:[{l:'man nc',u:'https://linux.die.net/man/1/nc'}]},
+
+  {name:'openssl',brief:'Криптография, сертификаты, шифрование TLS',
+   syntax:'openssl КОМАНДА [опции]',
+   desc:'Многофункциональный криптографический инструмент. Позволяет создавать сертификаты, проверять TLS-соединения, шифровать файлы, генерировать ключи и работать с PKI.',
+   opts:[
+     {f:'s_client',d:'TLS-клиент для диагностики'},
+     {f:'x509',d:'Работа с сертификатами X.509'},
+     {f:'genrsa',d:'Генерировать RSA-ключ'},
+     {f:'req',d:'Создать CSR или самоподписанный сертификат'},
+     {f:'enc',d:'Симметричное шифрование/расшифровка файлов'},
+     {f:'dgst',d:'Вычислить хэш (md5, sha256 и т.д.)'},
+   ],
+   exs:[
+     {c:'openssl s_client -connect google.com:443 -servername google.com < /dev/null 2>/dev/null | openssl x509 -noout -dates',cm:'# Срок действия TLS-сертификата'},
+     {c:'openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes',cm:'# Самоподписанный сертификат'},
+     {c:'openssl dgst -sha256 file.tar.gz',cm:'# SHA256-хэш файла'},
+     {c:'openssl enc -aes-256-cbc -in secret.txt -out secret.enc',cm:'# Зашифровать файл'},
+     {c:'openssl rand -hex 32',cm:'# Случайная строка — надёжный секрет/пароль'},
+   ],
+   tags:['advanced','network'],
+   links:[{l:'openssl docs',u:'https://www.openssl.org/docs/man3.0/man1/openssl.html'}]},
+
+  {name:'dig / nslookup',brief:'DNS-запросы и диагностика имён',
+   syntax:'dig [@сервер] имя [тип]  |  nslookup имя [сервер]',
+   desc:'dig (Domain Information Groper) — стандарт для DNS-диагностики. Показывает детали ответа DNS: TTL, авторитетные серверы, цепочку CNAME. nslookup — более простой аналог.',
+   opts:[
+     {f:'+short',d:'Короткий вывод — только ответ'},
+     {f:'+trace',d:'Трассировка делегирования от корня'},
+     {f:'+noall +answer',d:'Только секция Answer'},
+     {f:'-x IP',d:'Обратный DNS lookup (PTR)'},
+     {f:'ANY',d:'Запросить все типы записей'},
+     {f:'MX / NS / TXT / A / AAAA',d:'Конкретный тип записи'},
+   ],
+   exs:[
+     {c:'dig google.com',cm:'# A-запись (IP-адреса)'},
+     {c:'dig +short google.com',cm:'# Только IP'},
+     {c:'dig MX gmail.com',cm:'# Почтовые серверы'},
+     {c:'dig TXT google.com',cm:'# TXT-записи (SPF, DKIM и т.д.)'},
+     {c:'dig -x 8.8.8.8',cm:'# PTR: кому принадлежит IP'},
+     {c:'dig @1.1.1.1 example.com',cm:'# Спросить конкретный резолвер (Cloudflare)'},
+     {c:'dig +trace example.com',cm:'# Полный путь делегирования DNS'},
+   ],
+   tags:['network','advanced'],
+   links:[{l:'man dig',u:'https://linux.die.net/man/1/dig'}]},
+
+  {name:'iptables / ufw',brief:'Управление файрволом Linux',
+   syntax:'iptables [опции]  |  ufw [enable|disable|allow|deny]',
+   desc:'iptables — низкоуровневое управление Netfilter (firewall ядра Linux). ufw (Uncomplicated Firewall) — friendly-обёртка над iptables, особенно популярна в Ubuntu. Правила применяются сразу, но теряются при перезагрузке без iptables-save.',
+   opts:[
+     {f:'-L -n -v',d:'[iptables] Показать все правила с счётчиками'},
+     {f:'-A CHAIN',d:'[iptables] Добавить правило в цепочку'},
+     {f:'-D CHAIN N',d:'[iptables] Удалить правило N из цепочки'},
+     {f:'status verbose',d:'[ufw] Показать статус и правила'},
+     {f:'allow 22/tcp',d:'[ufw] Разрешить SSH'},
+     {f:'deny from IP',d:'[ufw] Заблокировать IP'},
+   ],
+   exs:[
+     {c:'sudo iptables -L -n -v',cm:'# Все правила с счётчиками'},
+     {c:'sudo ufw status verbose',cm:'# Статус UFW-файрвола'},
+     {c:'sudo ufw allow 22/tcp',cm:'# Открыть SSH'},
+     {c:'sudo ufw deny from 10.0.0.5',cm:'# Заблокировать IP'},
+     {c:'sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT',cm:'# Разрешить HTTP (iptables)'},
+     {c:'sudo iptables-save > /etc/iptables/rules.v4',cm:'# Сохранить правила'},
+   ],
+   tags:['advanced','network'],
+   danger:'⚠ Неверные правила iptables могут заблокировать все соединения включая SSH. Всегда проверяйте конфигурацию на локальном стенде или делайте timeout-сброс: at now + 5 min; iptables -F',
+   links:[{l:'iptables man',u:'https://linux.die.net/man/8/iptables'}]},
+
+  {name:'hostname / hosts',brief:'Имя хоста и разрешение имён',
+   syntax:'hostname  |  cat /etc/hosts  |  cat /etc/resolv.conf',
+   desc:'hostname показывает/устанавливает имя машины. /etc/hosts — локальная таблица DNS: переопределяет DNS для конкретных имён. /etc/resolv.conf — настройка DNS-резолверов.',
+   opts:[],
+   exs:[
+     {c:'hostname',cm:'# Текущее имя хоста'},
+     {c:'hostname -I',cm:'# Все IP-адреса машины'},
+     {c:'sudo hostnamectl set-hostname myserver',cm:'# Сменить имя хоста (systemd)'},
+     {c:'cat /etc/hosts',cm:'# Локальные DNS-записи'},
+     {c:'echo "192.168.1.100 myapp.local" | sudo tee -a /etc/hosts',cm:'# Добавить локальный DNS'},
+     {c:'cat /etc/resolv.conf',cm:'# Настроенные DNS-серверы'},
+   ],
+   tags:['network','common'],
+   links:[{l:'man hostname',u:'https://man7.org/linux/man-pages/man1/hostname.1.html'}]},
+]},
+
+// ───────────────────────────────── SHELL ADVANCED ──────────
+{id:'shelladv',icon:'⚡',name:'Shell: продвинутое',
+ desc:'Продвинутые приёмы bash: функции, массивы, арифметика, trap, heredoc',
+ cmds:[
+  {name:'Bash-функции',brief:'Объявление и использование функций в shell',
+   syntax:'fname() { команды; }  |  function fname { команды; }',
+   desc:'Функции в bash — переиспользуемые блоки кода. Принимают аргументы как $1, $2, ..., $@. Возвращают код выхода через return (не значение!). Для возврата значений используют echo + подстановку $(fname).',
+   opts:[
+     {f:'$1 ... $9',d:'Позиционные параметры функции'},
+     {f:'$@',d:'Все аргументы как отдельные слова'},
+     {f:'$#',d:'Количество аргументов'},
+     {f:'local VAR',d:'Локальная переменная (не видна снаружи)'},
+     {f:'return N',d:'Вернуть код выхода (0=успех)'},
+   ],
+   exs:[
+     {c:'greet() { echo "Привет, $1!"; }; greet "Genri"',cm:'# → Привет, Genri!'},
+     {c:'mkcd() { mkdir -p "$1" && cd "$1"; }',cm:'# Создать папку и сразу войти в неё'},
+     {c:'is_root() { [ "$(id -u)" -eq 0 ] && return 0 || return 1; }',cm:'# Проверка root'},
+     {c:'log() { echo "[$(date +%H:%M:%S)] $*" >> /var/log/myscript.log; }',cm:'# Логирование с временной меткой'},
+   ],
+   tags:['scripting','advanced'],
+   links:[{l:'Bash functions',u:'https://www.gnu.org/software/bash/manual/bash.html#Shell-Functions'}]},
+
+  {name:'Массивы в bash',brief:'Индексированные и ассоциативные массивы',
+   syntax:'arr=(val1 val2)  |  declare -A assoc',
+   desc:'Bash поддерживает два типа массивов: индексированные (arr[0]) и ассоциативные (dict["key"]). Полезны для хранения списков, словарей конфигураций, обработки результатов команд.',
+   opts:[
+     {f:'${arr[@]}',d:'Все элементы массива'},
+     {f:'${#arr[@]}',d:'Количество элементов'},
+     {f:'${arr[0]}',d:'Первый элемент'},
+     {f:'${!arr[@]}',d:'Все индексы (ключи)'},
+     {f:'declare -a',d:'Объявить индексированный массив'},
+     {f:'declare -A',d:'Объявить ассоциативный массив'},
+   ],
+   exs:[
+     {c:'fruits=("apple" "banana" "cherry"); echo "${fruits[1]}"',cm:'# → banana'},
+     {c:'for f in "${fruits[@]}"; do echo "$f"; done',cm:'# Итерация по массиву'},
+     {c:'files=($(ls *.log)); echo "Логов: ${#files[@]}"',cm:'# Файлы в массив'},
+     {c:'declare -A ports; ports[http]=80; ports[https]=443; echo "${ports[https]}"',cm:'# Ассоциативный массив'},
+   ],
+   tags:['scripting','advanced'],
+   links:[{l:'Bash arrays',u:'https://www.gnu.org/software/bash/manual/bash.html#Arrays'}]},
+
+  {name:'trap',brief:'Перехват сигналов и событий в bash-скриптах',
+   syntax:'trap "команда" СИГНАЛ...',
+   desc:'trap позволяет скрипту реагировать на сигналы (Ctrl+C = SIGINT, завершение = EXIT). Используется для cleanup при прерывании, логирования ошибок, корректного завершения.',
+   opts:[
+     {f:'EXIT',d:'Выполнить при любом выходе из скрипта'},
+     {f:'INT',d:'Ctrl+C (SIGINT)'},
+     {f:'TERM',d:'kill (SIGTERM)'},
+     {f:'ERR',d:'При ненулевом коде выхода любой команды'},
+     {f:'HUP',d:'Сигнал перезапуска (SIGHUP)'},
+   ],
+   exs:[
+     {c:'trap "echo Прерван!; exit 1" INT TERM',cm:'# Сообщение при Ctrl+C'},
+     {c:'TMPDIR=$(mktemp -d); trap "rm -rf $TMPDIR" EXIT',cm:'# Автоочистка временных файлов'},
+     {c:'set -e; trap \'echo "Ошибка на строке $LINENO"\' ERR',cm:'# Сообщать о каждой ошибке'},
+   ],
+   tags:['scripting','advanced'],
+   links:[{l:'Bash trap',u:'https://www.gnu.org/software/bash/manual/bash.html#index-trap'}]},
+
+  {name:'Heredoc',brief:'Многострочный ввод прямо в скрипте',
+   syntax:'команда << EOF ... EOF  |  команда <<- EOF',
+   desc:'Here-document позволяет вставлять многострочный текст прямо в скрипт без создания отдельного файла. <<- игнорирует ведущие TABы для отступов. Переменные и команды раскрываются внутри.',
+   opts:[
+     {f:'<< MARKER',d:'Heredoc с раскрытием переменных'},
+     {f:"<< 'MARKER'",d:'Без раскрытия — буквально'},
+     {f:'<<- MARKER',d:'Игнорировать ведущие TAB (не пробелы!)'},
+   ],
+   exs:[
+     {c:'cat << EOF\nХост: $(hostname)\nДата: $(date)\nEOF',cm:'# Шаблон с подстановкой переменных'},
+     {c:"ssh user@host << 'EOF'\ncd /app && git pull && systemctl restart app\nEOF",cm:'# Выполнить несколько команд по SSH'},
+     {c:"mysql -u root << EOF\nCREATE DATABASE myapp;\nGRANT ALL ON myapp.* TO 'user'@'localhost';\nEOF",cm:'# Многострочный SQL без файла'},
+   ],
+   tags:['scripting'],
+   links:[{l:'Heredoc manual',u:'https://www.gnu.org/software/bash/manual/bash.html#Here-Documents'}]},
+
+  {name:'read',brief:'Ввод данных от пользователя в скрипте',
+   syntax:'read [опции] переменная...',
+   desc:'Читает строку из stdin в переменную. Используется для интерактивных скриптов: запрос паролей, подтверждений, параметров. Можно читать из файла и пайпа.',
+   opts:[
+     {f:'-p "текст"',d:'Prompt — показать приглашение'},
+     {f:'-s',d:'Silent — скрыть ввод (для паролей)'},
+     {f:'-n N',d:'Прочитать ровно N символов'},
+     {f:'-t N',d:'Таймаут N секунд'},
+     {f:'-r',d:'Raw — не интерпретировать обратный слэш'},
+     {f:'-a',d:'Читать в массив'},
+   ],
+   exs:[
+     {c:'read -p "Введите имя: " name; echo "Привет, $name"',cm:'# Ввод с приглашением'},
+     {c:'read -s -p "Пароль: " pass; echo',cm:'# Скрытый ввод пароля'},
+     {c:'read -t 10 -p "Продолжить? [y/N]: " ans || echo "Таймаут"',cm:'# С таймаутом 10 секунд'},
+     {c:'while IFS= read -r line; do echo ">> $line"; done < file.txt',cm:'# Читать файл построчно — правильный способ'},
+   ],
+   tags:['scripting'],
+   links:[{l:'Bash read',u:'https://www.gnu.org/software/bash/manual/bash.html#index-read'}]},
+
+  {name:'set / shopt',brief:'Параметры и поведение bash-интерпретатора',
+   syntax:'set -опция  |  shopt -s опция',
+   desc:'set управляет режимами bash. set -e завершает скрипт при ошибке, set -u — при обращении к неустановленной переменной. Вместе создают надёжные скрипты. shopt — дополнительные опции shell.',
+   opts:[
+     {f:'-e',d:'Выйти при ненулевом коде завершения команды'},
+     {f:'-u',d:'Ошибка при использовании неустановленной переменной'},
+     {f:'-x',d:'Трассировка: выводить каждую команду перед выполнением'},
+     {f:'-o pipefail',d:'Код ошибки пайпа = код последней провалившейся команды'},
+     {f:'-o errexit',d:'Аналог -e (имя флага)'},
+   ],
+   exs:[
+     {c:'#!/bin/bash\nset -euo pipefail',cm:'# Стандартный "safety header" скрипта',e:'Три флага которые должны быть в каждом серьёзном скрипте'},
+     {c:'set -x; commands; set +x',cm:'# Трассировка только нужного участка'},
+     {c:'shopt -s globstar; ls **/*.py',cm:'# globstar: ** рекурсивно матчит директории'},
+     {c:'shopt -s nullglob; files=(*.log); echo "${#files[@]} логов"',cm:'# nullglob: *.log → пустой массив вместо литерала'},
+   ],
+   tags:['scripting','advanced'],
+   links:[{l:'Bash set',u:'https://www.gnu.org/software/bash/manual/bash.html#The-Set-Builtin'}]},
+]},
+
+// ───────────────────────────────── GIT ADVANCED ──────────
+{id:'gitadv',icon:'🔀',name:'Git: продвинутое',
+ desc:'Работа с историей, reflog, cherry-pick, bisect, submodules и хуки',
+ cmds:[
+  {name:'git cherry-pick',brief:'Применить конкретный коммит к текущей ветке',
+   syntax:'git cherry-pick [опции] <хэш>...',
+   desc:'cherry-pick берёт изменения из указанного коммита(ов) и применяет их к текущей ветке как новый коммит. Полезно когда нужно перенести hotfix из dev в main без слияния всей ветки.',
+   opts:[
+     {f:'-n',d:'Не создавать коммит, только применить изменения (staged)'},
+     {f:'-e',d:'Открыть редактор для изменения commit-сообщения'},
+     {f:'--abort',d:'Отменить прерванный cherry-pick'},
+     {f:'--continue',d:'Продолжить после разрешения конфликтов'},
+     {f:'A..B',d:'Диапазон коммитов (не включая A)'},
+   ],
+   exs:[
+     {c:'git cherry-pick abc1234',cm:'# Применить один коммит'},
+     {c:'git cherry-pick abc1234..def5678',cm:'# Диапазон коммитов'},
+     {c:'git cherry-pick -n abc1234',cm:'# Применить без коммита (проверить изменения)'},
+   ],
+   tags:['advanced'],
+   links:[{l:'git cherry-pick docs',u:'https://git-scm.com/docs/git-cherry-pick'}]},
+
+  {name:'git reflog',brief:'Полная история движений HEAD',
+   syntax:'git reflog [show] [ветка]',
+   desc:'reflog — журнал всех изменений HEAD и веток, включая те что не видны в git log (reset, rebase, amend). Позволяет восстановить "потерянные" коммиты. Хранится 90 дней по умолчанию.',
+   opts:[
+     {f:'show',d:'Показать reflog (умолчание)'},
+     {f:'expire',d:'Очистить старые записи'},
+     {f:'--all',d:'reflog для всех ссылок'},
+   ],
+   exs:[
+     {c:'git reflog',cm:'# Вся история HEAD с хэшами'},
+     {c:'git reflog | grep "checkout:"',cm:'# Только переключения веток'},
+     {c:'git checkout HEAD@{3}',cm:'# Вернуться к состоянию 3 действия назад'},
+     {c:'git reset --hard HEAD@{1}',cm:'# Откат последнего действия (например ошибочного reset)',e:'Самый важный способ "воскресить" потерянное'},
+   ],
+   tags:['advanced'],
+   links:[{l:'git reflog docs',u:'https://git-scm.com/docs/git-reflog'}]},
+
+  {name:'git bisect',brief:'Бинарный поиск коммита, который сломал код',
+   syntax:'git bisect start  →  git bisect good/bad',
+   desc:'bisect автоматически делит историю пополам и просит проверить каждую версию: хорошая или плохая. За O(log n) шагов находит первый "плохой" коммит. Можно автоматизировать через run-скрипт.',
+   opts:[
+     {f:'start',d:'Начать bisect'},
+     {f:'bad [хэш]',d:'Пометить коммит как сломанный'},
+     {f:'good [хэш]',d:'Пометить коммит как рабочий'},
+     {f:'skip',d:'Пропустить текущий коммит (например не компилируется)'},
+     {f:'reset',d:'Завершить bisect, вернуться к HEAD'},
+     {f:'run ./test.sh',d:'Автоматический bisect через скрипт'},
+   ],
+   exs:[
+     {c:'git bisect start\ngit bisect bad HEAD\ngit bisect good v1.0.0',cm:'# Начать — сейчас плохо, v1.0.0 было хорошо'},
+     {c:'git bisect run npm test',cm:'# Автоматически: npm test = exit 0 — хорошо'},
+     {c:'git bisect reset',cm:'# Завершить поиск'},
+   ],
+   tags:['advanced'],
+   links:[{l:'git bisect docs',u:'https://git-scm.com/docs/git-bisect'}]},
+
+  {name:'git worktree',brief:'Несколько рабочих деревьев из одного репозитория',
+   syntax:'git worktree add [путь] [ветка]',
+   desc:'worktree позволяет иметь несколько веток одного репозитория, извлечённых в разные директории одновременно. Не нужно делать stash/switch когда нужно срочно переключиться.',
+   opts:[
+     {f:'add PATH BRANCH',d:'Создать новое рабочее дерево'},
+     {f:'list',d:'Показать все рабочие деревья'},
+     {f:'remove PATH',d:'Удалить рабочее дерево'},
+     {f:'-b NEW_BRANCH',d:'Создать новую ветку в worktree'},
+   ],
+   exs:[
+     {c:'git worktree add ../hotfix-branch hotfix/v1.2.1',cm:'# Ветка hotfix в соседней папке'},
+     {c:'git worktree list',cm:'# Список всех worktree'},
+     {c:'git worktree add -b feature/new-ui ../new-ui main',cm:'# Новая ветка от main в новой папке'},
+     {c:'git worktree remove ../hotfix-branch',cm:'# Удалить после завершения'},
+   ],
+   tags:['advanced'],
+   links:[{l:'git worktree docs',u:'https://git-scm.com/docs/git-worktree'}]},
+
+  {name:'git config',brief:'Настройка параметров Git (глобально и локально)',
+   syntax:'git config [--global|--local] ключ значение',
+   desc:'Конфигурирование Git на трёх уровнях: system (/etc/gitconfig), global (~/.gitconfig), local (.git/config). Локальный приоритет выше глобального. Можно создавать алиасы команд.',
+   opts:[
+     {f:'--global',d:'Глобальный уровень (~/.gitconfig)'},
+     {f:'--local',d:'Уровень репозитория (.git/config)'},
+     {f:'--list',d:'Вывести все настройки'},
+     {f:'--edit',d:'Открыть файл конфига в редакторе'},
+     {f:'--unset',d:'Удалить настройку'},
+   ],
+   exs:[
+     {c:'git config --global user.name "Genri"\ngit config --global user.email "genri@example.com"',cm:'# Идентификация'},
+     {c:'git config --global core.editor vim',cm:'# Редактор по умолчанию'},
+     {c:'git config --global alias.lg "log --oneline --graph --decorate --all"',cm:'# Алиас: git lg',e:'git lg — красивый граф веток'},
+     {c:'git config --global pull.rebase true',cm:'# pull --rebase по умолчанию'},
+     {c:'git config --list --show-origin',cm:'# Все настройки с источниками'},
+   ],
+   tags:['common'],
+   links:[{l:'git config docs',u:'https://git-scm.com/docs/git-config'}]},
+
+  {name:'git tag',brief:'Теги для маркировки версий',
+   syntax:'git tag [имя] [коммит]  |  git tag -a имя -m "сообщение"',
+   desc:'Теги — постоянные метки на коммитах. Lightweight-тег (просто указатель), annotated-тег (полноценный объект с сообщением, автором, датой). Используются для маркировки релизов (v1.0.0).',
+   opts:[
+     {f:'-a',d:'Annotated-тег (рекомендован для релизов)'},
+     {f:'-m "msg"',d:'Сообщение тега'},
+     {f:'-l "v1.*"',d:'Список тегов по шаблону'},
+     {f:'-d',d:'Удалить тег'},
+     {f:'--contains',d:'Коммиты, входящие в тег'},
+   ],
+   exs:[
+     {c:'git tag v1.0.0',cm:'# Lightweight-тег на текущем HEAD'},
+     {c:'git tag -a v2.0.0 -m "Release 2.0: major update"',cm:'# Annotated-тег с сообщением'},
+     {c:'git tag -l "v1.*"',cm:'# Все v1.x теги'},
+     {c:'git push origin --tags',cm:'# Отправить все теги на remote'},
+     {c:'git tag -d v1.0.0 && git push origin :refs/tags/v1.0.0',cm:'# Удалить тег локально и на remote'},
+   ],
+   tags:['common'],
+   links:[{l:'git tag docs',u:'https://git-scm.com/docs/git-tag'}]},
+]},
+
+// ───────────────────────────────── PROCESS ADVANCED ──────────
+{id:'procadv',icon:'🧵',name:'Процессы: расширенное',
+ desc:'Управление заданиями, приоритеты, namespaces, cgroups и diagnositics',
+ cmds:[
+  {name:'jobs / fg / bg / disown',brief:'Управление фоновыми и приостановленными задачами',
+   syntax:'jobs  |  fg %N  |  bg %N  |  disown %N',
+   desc:'Bash позволяет запускать несколько задач: в фоне (&), приостанавливать (Ctrl+Z) и управлять ими. jobs — список, fg — вернуть на передний план, bg — запустить приостановленное в фоне, disown — открепить от терминала.',
+   opts:[
+     {f:'jobs -l',d:'Показать PID каждого задания'},
+     {f:'fg %1',d:'Вернуть задание 1 на передний план'},
+     {f:'bg %2',d:'Продолжить задание 2 в фоне'},
+     {f:'disown -h %1',d:'Открепить без SIGHUP (продолжит работу после logout)'},
+   ],
+   exs:[
+     {c:'long_command &',cm:'# Сразу запустить в фоне'},
+     {c:'Ctrl+Z && bg',cm:'# Приостановить и продолжить в фоне'},
+     {c:'jobs -l',cm:'# Список фоновых задач с PID'},
+     {c:'fg %1',cm:'# Вернуть задание 1'},
+     {c:'disown -a',cm:'# Открепить все задания от терминала'},
+   ],
+   tags:['common'],
+   links:[{l:'Bash job control',u:'https://www.gnu.org/software/bash/manual/bash.html#Job-Control'}]},
+
+  {name:'nice / renice',brief:'Приоритет процессов для планировщика CPU',
+   syntax:'nice -n N команда  |  renice -n N -p PID',
+   desc:'nice задаёт "вежливость" процесса (-20=максимальный приоритет, 19=минимальный). По умолчанию 0. Только root может понижать значение (повышать приоритет). renice изменяет приоритет уже запущенного.',
+   opts:[
+     {f:'-n N',d:'Значение nice (-20..19)'},
+     {f:'-p PID',d:'[renice] Применить к PID'},
+     {f:'-u user',d:'[renice] Все процессы пользователя'},
+     {f:'-g group',d:'[renice] Все процессы группы'},
+   ],
+   exs:[
+     {c:'nice -n 19 make -j8',cm:'# Сборка с минимальным приоритетом (не мешать)',e:'Компиляция не будет тормозить другие задачи'},
+     {c:'renice -n 5 -p 12345',cm:'# Снизить приоритет PID 12345'},
+     {c:'sudo renice -n -10 -p $(pgrep nginx)',cm:'# Повысить приоритет nginx (нужен root)'},
+   ],
+   tags:['advanced'],
+   links:[{l:'man nice',u:'https://man7.org/linux/man-pages/man1/nice.1.html'}]},
+
+  {name:'ulimit',brief:'Лимиты ресурсов для процессов текущего shell',
+   syntax:'ulimit [опции] [значение]',
+   desc:'Устанавливает ограничения ресурсов: размер файла, число процессов, памяти, открытых файлов. Важно для серверов — предотвращает исчерпание ресурсов одним процессом.',
+   opts:[
+     {f:'-n N',d:'Максимум открытых файловых дескрипторов'},
+     {f:'-u N',d:'Максимум процессов пользователя'},
+     {f:'-m N',d:'Максимум RSS-памяти (KB)'},
+     {f:'-f N',d:'Максимум размера создаваемых файлов'},
+     {f:'-a',d:'Показать все текущие лимиты'},
+     {f:'-S/-H',d:'Soft или Hard лимит'},
+   ],
+   exs:[
+     {c:'ulimit -a',cm:'# Все текущие лимиты'},
+     {c:'ulimit -n',cm:'# Текущий лимит открытых файлов (важно для серверов)'},
+     {c:'ulimit -n 65536',cm:'# Увеличить лимит файлов в текущей сессии'},
+     {c:'ulimit -u 0 && fork_bomb',cm:'# НЕ ДЕЛАЙТЕ ТАК — и не запускайте fork-bomb!'},
+   ],
+   tags:['advanced'],
+   links:[{l:'man ulimit',u:'https://ss64.com/bash/ulimit.html'}]},
+
+  {name:'pgrep / pstree',brief:'Поиск процессов и дерево процессов',
+   syntax:'pgrep [опции] шаблон  |  pstree [опции] [PID|user]',
+   desc:'pgrep ищет процессы по имени/атрибутам и возвращает PID. pstree показывает иерархию процессов в виде дерева — удобно понять кто кого породил.',
+   opts:[
+     {f:'-l',d:'[pgrep] Показать имя процесса вместе с PID'},
+     {f:'-u user',d:'[pgrep] Только процессы пользователя'},
+     {f:'-f',d:'[pgrep] Искать в полной командной строке'},
+     {f:'-a',d:'[pstree] Показать аргументы команд'},
+     {f:'-p',d:'[pstree] Показать PID'},
+     {f:'-u',d:'[pstree] Показать пользователей'},
+   ],
+   exs:[
+     {c:'pgrep -l nginx',cm:'# PID и имя всех nginx-процессов'},
+     {c:'pgrep -u www-data',cm:'# Все процессы www-data'},
+     {c:'pstree -p $$',cm:'# Дерево текущего shell с PID'},
+     {c:'pstree -u',cm:'# Всё дерево с пользователями'},
+     {c:'kill $(pgrep -f "python manage.py")',cm:'# Убить процесс по части командной строки'},
+   ],
+   tags:['common'],
+   links:[{l:'man pgrep',u:'https://man7.org/linux/man-pages/man1/pgrep.1.html'}]},
+]},
+
 ];
 // ════════════════════════════════════════════════════════
 //  ENGINE
@@ -2202,7 +2852,8 @@ function renderContent(){
         <h4>Примеры</h4>
         <div class="exs">${(cmd.exs||[]).map(e =>
           `<div class="ex">
-            <div class="ex-cmd">$ ${e.c}</div>
+            <button class="copy-btn" onclick="copyCmd(this,\`${e.c.replace(/`/g,'\\`').replace(/\n/g,' ')}\`,event)">copy</button>
+            <div class="ex-cmd">$ ${e.c.replace(/\n/g,'\n$ ')}</div>
             <div class="ex-comment">${e.cm}</div>
             ${e.e?`<div class="ex-explain">→ ${e.e}</div>`:''}
           </div>`
@@ -2215,11 +2866,14 @@ function renderContent(){
       `<a href="${l.u}" target="_blank" rel="noopener" class="lnk">↗ ${l.l}</a>`
     ).join('')}</div>` : '';
 
+    const catBadge = query ? `<span class="cat-badge">${cmd.catName||''}</span>` : '';
+
     h += `<div class="card ${isOpen?'open':''}" onclick="toggle('${key}',event)">
       ${isOpen ? `<button class="close-btn" onclick="toggle('${key}',event)">✕ Свернуть</button>` : ''}
       <div class="card-top">
         <span class="cmd-name">${cmd.name}</span>
         <span class="tags">${tagsH}</span>
+        ${catBadge}
       </div>
       <div class="card-brief">${cmd.brief}</div>
       <div class="card-syntax">${cmd.syntax}</div>
@@ -2241,6 +2895,7 @@ function renderContent(){
 
 function toggle(key, ev){
   if(ev.target.tagName === 'A') return;
+  if(ev.target.classList.contains('copy-btn')) return;
   openCard = openCard === key ? null : key;
   renderContent();
   if(openCard){
@@ -2249,6 +2904,18 @@ function toggle(key, ev){
       if(el) el.scrollIntoView({behavior:'smooth', block:'nearest'});
     });
   }
+}
+
+function copyCmd(btn, text, ev){
+  ev.stopPropagation();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ ok';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1500);
+  }).catch(() => {
+    btn.textContent = 'err';
+    setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+  });
 }
 
 function go(id){
